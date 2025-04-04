@@ -52,6 +52,7 @@ def signup(
     db.commit()
     return {"message": "회원가입 완료"}
 
+
 @auth_router.post("/login")
 def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
@@ -59,4 +60,11 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         raise HTTPException(status_code=400, detail="이메일 또는 비밀번호가 일치하지 않습니다.")
 
     token = create_access_token(data={"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+
+    return {
+        "message": "로그인 성공",
+        "access_token": token,
+        "token_type": "bearer",
+        "user_id": user.id,  # ✅ 프론트 연동용
+        "email": user.email
+    }
