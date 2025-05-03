@@ -1,5 +1,7 @@
-from urllib.request import localhost
+import os
+#from urllib.request import localhost
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -7,14 +9,13 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 # DB 연결 정보
 #DATABASE_URL = "postgresql://wan:4553@localhost/postgres" mac
 
-DATABASE_URL= "postgresql://postgres:4553@localhost:5432/postgres"
 
+load_dotenv()
 
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
-
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
