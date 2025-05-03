@@ -5,33 +5,112 @@ import os
 import requests
 import uuid
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from model import LearningRecord
 
-# 🔥 .env 파일 로드
 load_dotenv()
 
 # FastAPI 라우터 생성
 feedback_router = APIRouter()
 
-# ========================== 기본 문장 평가 API ==========================
+# ========================== 문장 평가 API (Clova 연동) ==========================
 
 class FeedbackInput(BaseModel):
     user_id: int
+    word: str
     sentence: str
 
 class FeedbackResult(BaseModel):
-    score: float
     suggestion: str
 
 @feedback_router.post("/evaluate", response_model=FeedbackResult)
 def evaluate_sentence(input_data: FeedbackInput):
-    sentence = input_data.sentence.strip()
-    score = min(1.0, max(0.1, len(sentence) / 50))
-    suggestion = sentence.replace("진취적인", "적극적인") if "진취적인" in sentence else "문장이 자연스럽습니다."
+    api_key = os.getenv("CLOVA_X_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="CLOVA_X_API_KEY가 설정되지 않았습니다.")
 
-    return FeedbackResult(
-        score=round(score, 2),
-        suggestion=suggestion
-    )
+    url = "https://clovastudio.stream.ntruss.com/testapp/v3/chat-completions/HCX-005"
+
+    headers = {
+        "Authorization": api_key,
+        "X-NCP-CLOVASTUDIO-REQUEST-ID": str(uuid.uuid4()),
+        "Content-Type": "application/json; charset=utf-8",
+        "Accept": "text/event-stream"
+    }
+
+    prompt = [
+        {
+            "role": "system",
+            "content": (
+                "너는 초등학생이 작성한 문장을 평가하는 AI야. "
+                "문장의 자연스러움, 문맥 적절성, 문법적 오류를 고려해서 "
+                "한 문장으로 수정 제안만 해줘. 점수는 주지 마. "
+                "예: '자연스럽게 바꿔보면 이렇게 쓸 수 있어요: ...'"
+            )
+        },
+        {
+            "role": "user",
+            "content": f"문장: {input_data.sentence}"
+        }
+    ]
+
+    request_data = {
+        "messages": prompt,
+        "topP": 0.8,
+        "topK": 0,
+        "maxTokens": 256,
+        "temperature": 0.5,
+        "repetitionPenalty": 1.1,
+        "stop": [],
+        "includeAiFilters": True,
+        "seed": 0
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=request_data, stream=False)
+        response.raise_for_status()
+
+        suggestion = ""
+        current_event = ""
+
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode("utf-8").strip()
+                if decoded_line.startswith("event:"):
+                    current_event = decoded_line[len("event:"):].strip()
+                elif decoded_line.startswith("data:"):
+                    data_json = decoded_line[len("data:"):].strip()
+                    try:
+                        parsed = json.loads(data_json)
+                        if current_event == "result":
+                            if "message" in parsed and "content" in parsed["message"]:
+                                suggestion = parsed["message"]["content"].strip()
+                                break
+                    except json.JSONDecodeError:
+                        continue
+
+        if not suggestion:
+            raise HTTPException(status_code=500, detail="Clova에서 피드백을 받지 못했습니다.")
+
+        # ✅ DB 저장
+        db: Session = SessionLocal()
+        record = LearningRecord(
+            user_id=input_data.user_id,
+            word=input_data.word,
+            sentence=input_data.sentence.strip(),
+            score=None,  # 점수는 제공하지 않음
+            suggestion=suggestion
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+        db.close()
+
+        return FeedbackResult(suggestion=suggestion)
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # ========================== Clova X - 1차 질문 API ==========================

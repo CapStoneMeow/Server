@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, UniqueConstraint, Boolean, Text, Float
 from sqlalchemy.orm import relationship
-from database import Base
 from datetime import datetime
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -12,6 +12,8 @@ class User(Base):
     password = Column(String)
 
     learned_words = relationship("LearnedWord", back_populates="user")
+    pretest_responses = relationship("PretestResponse", back_populates="user")
+
 
 class LearnedWord(Base):
     __tablename__ = "learned_words"
@@ -39,3 +41,26 @@ class QuizHistory(Base):
     is_correct = Column(Boolean, nullable=False)
     round = Column(Integer, default=1)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+class PretestResponse(Base):
+    __tablename__ = "pretest_responses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category = Column(String, nullable=False)
+    question = Column(Text, nullable=False)
+    answer_text = Column(Text, nullable=False)
+    predicted_grade = Column(Integer, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="pretest_responses")
+
+class LearningRecord(Base):
+    __tablename__ = "learning_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    word = Column(String)
+    sentence = Column(String)
+    score = Column(Float)
+    suggestion = Column(String)
