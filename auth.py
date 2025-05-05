@@ -53,6 +53,8 @@ def signup(
     return {"message": "회원가입 완료"}
 
 
+from fastapi.responses import JSONResponse
+
 @auth_router.post("/login")
 def login(email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
@@ -61,10 +63,20 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
 
     token = create_access_token(data={"sub": user.email})
 
-    return {
+    response = JSONResponse(content={
         "message": "로그인 성공",
-        "access_token": token,
-        "token_type": "bearer",
-        "user_id": user.id,  # ✅ 프론트 연동용
+        "user_id": user.id,
         "email": user.email
-    }
+    })
+
+    # ✅ JWT를 HTTPOnly 쿠키로 저장
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite="lax",  # 필요 시 "none"으로 조정하고 secure=True 설정
+        secure=True      # HTTPS 환경에서만 동작 (로컬 개발 시 False 가능)
+    )
+
+    return response
+
