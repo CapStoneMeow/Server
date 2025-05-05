@@ -69,14 +69,13 @@ def login(email: str = Form(...), password: str = Form(...), db: Session = Depen
         "email": user.email
     })
 
-    # ✅ JWT를 HTTPOnly 쿠키로 저장
+    # JWT를 HTTPOnly 쿠키로 저장
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
         samesite="lax",  # 필요 시 "none"으로 조정하고 secure=True 설정
-        secure=True      # HTTPS 환경에서만 동작 (로컬 개발 시 False 가능)
+        secure=False      # HTTPS 환경에서만 동작 (로컬 개발 시 False 가능)
     )
 
     return response
-
