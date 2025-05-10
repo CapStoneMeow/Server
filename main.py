@@ -30,7 +30,11 @@ app.include_router(pretest_router, prefix="/pretest", tags=["Pretest"])
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 프론트엔드 개발 서버 주소
+    allow_origins=[
+        "http://localhost:3000",        # 예: 기본 React
+        "http://localhost:5173",        # 예: Vite 기반
+        #"https://your-frontend.com",    # 배포용 프론트 주소
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
