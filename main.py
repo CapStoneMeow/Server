@@ -28,7 +28,7 @@ def download_model():
     # 예시: https://drive.google.com/file/d/1ABCxyz123456789/view → id=1ABCxyz123456789
     file_id = "1sIsreomr2kGCge50cd358r7NX8aLwNzl"
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    zip_path = "kobert_model.zip"
+    zip_path = "fine_tuned_kobert_book_all.zip"
 
     try:
         with requests.get(url, stream=True) as r:
