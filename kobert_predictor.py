@@ -1,7 +1,8 @@
 import torch
 from transformers import BertTokenizer, AutoModelForSequenceClassification
 
-MODEL_PATH = "checkpoint-3198"  # 모델 위치에 맞게 수정
+MODEL_PATH = "./saved_models/fine_tuned_kobert_book_all/checkpoint-3198"
+  # 모델 위치에 맞게 수정
 tokenizer = BertTokenizer.from_pretrained("monologg/kobert")
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH)
 model.eval()
