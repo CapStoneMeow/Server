@@ -205,6 +205,7 @@ def start_chat(input_data: ChatInput):
 class FollowUpInput(BaseModel):
     answer: str
     round: int
+    category: str
 
 @feedback_router.post("/followup_chat")
 def followup_chat(input_data: FollowUpInput):
@@ -242,14 +243,15 @@ def followup_chat(input_data: FollowUpInput):
             {
                 "role": "system",
                 "content": (
-                    "너는 초등학생과 대화하는 친절한 AI야. "
-                    "학생의 답변을 듣고 자연스럽게 이어지는 부드러운 다음 질문을 만들어줘. "
-                    "문장은 한 문장으로 끝내고, 어렵지 않고 따뜻하게 해줘."
+                    f"너는 초등학생과 대화하는 친절한 AI야. "
+                    f"학생의 답변을 듣고 자연스럽게 이어지는 질문을 만들어줘. "
+                    f"질문의 주제는 반드시 '{input_data.category}'와 관련된 것이어야 해. "
+                    f"문장은 한 문장으로 끝내고, 어렵지 않고 따뜻하게 해줘."
                 )
             },
             {
                 "role": "user",
-                "content": f"학생이 이렇게 대답했어: \"{input_data.answer}\"\n이 대답에 자연스럽게 이어질 수 있는 질문을 하나 만들어줘."
+                "content": f"학생이 이렇게 대답했어: \"{input_data.answer}\""
             }
         ]
 
