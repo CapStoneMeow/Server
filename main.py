@@ -6,49 +6,49 @@ from test import test_router, pretest_router
 from feedback import feedback_router
 from predict_grade import grade_router
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 
 import os
 import zipfile
 import requests
-from fastapi.middleware.cors import CORSMiddleware
 
-# ✅ .env 로드
+# ✅ 환경 변수 로드
 load_dotenv()
 
-# ✅ 모델 자동 다운로드 함수
-def download_model():
-    model_dir = "./saved_models/fine_tuned_kobert_book_all/checkpoint-3198"
+# ✅ 모델 자동 다운로드 + 압축 해제 함수
+def download_and_extract_model():
+    model_dir = "./model/kobert"
     if os.path.exists(model_dir):
-        print("✅ 모델이 이미 존재합니다. 다운로드 생략")
+        print("✅ 모델 디렉토리 존재. 다운로드 생략")
         return
 
     print("🔽 KoBERT 모델 다운로드 시작...")
 
-    # 📌 Google Drive에서 공유한 zip 파일 ID를 넣어주세요
-    # 예시: https://drive.google.com/file/d/1ABCxyz123456789/view → id=1ABCxyz123456789
-    file_id = "1sIsreomr2kGCge50cd358r7NX8aLwNzl"
+    file_id = "1J05OZYfXX3hechRLWjMB06vJhOjO8VOv"  # ← 사용자의 Google Drive zip 파일 ID
+    zip_path = "kobert_model.zip"
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    zip_path = "fine_tuned_kobert_book_all.zip"
 
     try:
+        # 다운로드
         with requests.get(url, stream=True) as r:
             r.raise_for_status()
             with open(zip_path, "wb") as f:
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
 
+        # 압축 해제
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
-            zip_ref.extractall("./saved_models/")
+            zip_ref.extractall("./model")
 
         os.remove(zip_path)
         print("✅ 모델 다운로드 및 압축 해제 완료")
     except Exception as e:
-        print("❌ 모델 다운로드 실패:", e)
+        print("❌ 모델 다운로드/압축 해제 실패:", e)
 
-# ✅ 서버 시작 전에 모델 다운로드 시도
-download_model()
+# ✅ 모델 다운로드 먼저 수행
+download_and_extract_model()
 
-# ✅ FastAPI 인스턴스 생성
+# ✅ FastAPI 앱 초기화
 app = FastAPI()
 
 # ✅ DB 테이블 생성
@@ -71,9 +71,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://localhost:5174",
         "http://localhost:5173",
-        # 배포용 프론트 주소도 여기에 추가 가능
+        "http://localhost:5174",
+        # 배포 주소도 추가 가능
     ],
     allow_credentials=True,
     allow_methods=["*"],
