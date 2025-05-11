@@ -1,5 +1,5 @@
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 import os
 import requests
@@ -206,7 +206,7 @@ class FollowUpInput(BaseModel):
     answer: str
 
 @feedback_router.post("/followup_chat")
-def followup_chat(input_data: FollowUpInput):
+def followup_chat(input_data: FollowUpInput, is_last: bool = Query(False)):
     api_key = os.getenv("CLOVA_X_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="CLOVA_X_API_KEY가 설정되지 않았습니다.")
@@ -258,7 +258,6 @@ def followup_chat(input_data: FollowUpInput):
         for line in response.iter_lines():
             if line:
                 decoded_line = line.decode("utf-8").strip()
-                #print(f"🔵 받은 라인: {decoded_line}")
 
                 if decoded_line.startswith("event:"):
                     current_event = decoded_line[len("event:"):].strip()
@@ -267,23 +266,31 @@ def followup_chat(input_data: FollowUpInput):
                     data_json = decoded_line[len("data:"):].strip()
                     try:
                         parsed = json.loads(data_json)
-
                         if current_event == "result":
                             if "message" in parsed and "content" in parsed["message"]:
                                 followup_question = parsed["message"]["content"].strip()
-                                print(f"✅ 최종 꼬리질문 (stop 시점): {followup_question}")
                                 break
-
                     except json.JSONDecodeError:
                         continue
 
         if not followup_question:
             raise HTTPException(status_code=500, detail="최종 꼬리질문을 가져오지 못했습니다.")
 
-        return {"followup_question": followup_question}
+        # ✅ is_last=True인 경우 마무리 멘트도 생성해서 함께 반환
+        if is_last:
+            return {
+                "followup_question": followup_question,
+                "ending_message": "수고했어! 이제 학습하러 가볼까?",
+                "next_action": "학습하기"
+            }
+
+        return {
+            "followup_question": followup_question
+        }
 
     except Exception as e:
         return {"error": str(e)}
+
 
 @feedback_router.post("/end_chat")
 def end_chat():
