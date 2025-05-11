@@ -24,9 +24,9 @@ def download_and_extract_model():
 
     print("🔽 KoBERT 모델 다운로드 시작...")
 
-    file_id = "1J05OZYfXX3hechRLWjMB06vJhOjO8VOv"  # ← 사용자의 Google Drive zip 파일 ID
+    file_id = "1UTMDO5l7YvkpVNAZjQbHnLKwFf1NAeef"  # ← 사용자의 Google Drive zip 파일 ID
     zip_path = "kobert_model.zip"
-    url = "https://docs.google.com/uc?export=download&id=1J05OZYfXX3hechRLWjMB06vJhOjO8VOv"
+    url = "https://docs.google.com/uc?export=download&id=1UTMDO5l7YvkpVNAZjQbHnLKwFf1NAeef"
 
     try:
         # 다운로드
