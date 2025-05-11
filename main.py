@@ -32,7 +32,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",        # 예: 기본 React
-        "http://localhost:5174",        # 예: Vite 기반
+        "http://localhost:5174",
+        "http://localhost:5173",# 예: Vite 기반
         #"https://your-frontend.com",    # 배포용 프론트 주소
     ],
     allow_credentials=True,
