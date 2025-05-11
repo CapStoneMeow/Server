@@ -5,6 +5,7 @@ from learning import learn_router
 from test import test_router, pretest_router
 from feedback import feedback_router
 from dotenv import load_dotenv
+from predict_grade import grade_router
 
 import os
 
@@ -27,6 +28,7 @@ app.include_router(learn_router, prefix="/api", tags=["Learning"])
 app.include_router(test_router, prefix="/test")
 app.include_router(feedback_router, prefix="/chat")
 app.include_router(pretest_router, prefix="/pretest", tags=["Pretest"])
+app.include_router(grade_router, prefix="/grade", tags=["GradePredict"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,5 +42,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
