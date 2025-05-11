@@ -204,6 +204,7 @@ def start_chat(input_data: ChatInput):
 
 class FollowUpInput(BaseModel):
     answer: str
+    round: int
 
 @feedback_router.post("/followup_chat")
 def followup_chat(input_data: FollowUpInput):
