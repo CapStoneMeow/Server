@@ -5,8 +5,18 @@ from transformers import BertTokenizer, AutoModelForSequenceClassification
 MODEL_PATH = "./saved_models/fine_tuned_kobert_book_all/checkpoint-3198"
 
 # ✅ 로컬에서 tokenizer 및 model 불러오기 (Hugging Face Hub 접근 X)
-tokenizer = BertTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, local_files_only=True)
+tokenizer = BertTokenizer.from_pretrained(
+    MODEL_PATH,
+    local_files_only=True,
+    trust_remote_code=True
+)
+
+model = AutoModelForSequenceClassification.from_pretrained(
+    MODEL_PATH,
+    local_files_only=True,
+    trust_remote_code=True
+)
+
 model.eval()
 
 # ✅ 라벨 매핑
