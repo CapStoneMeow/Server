@@ -11,7 +11,10 @@ from model import LearningRecord
 
 load_dotenv()
 
+# FastAPI 라우터 생성
 feedback_router = APIRouter()
+
+# ========================== 문장 평가 API (Clova 연동) ==========================
 
 class FeedbackInput(BaseModel):
     user_id: int
@@ -90,12 +93,13 @@ def evaluate_sentence(input_data: FeedbackInput):
         if not suggestion:
             raise HTTPException(status_code=500, detail="Clova에서 피드백을 받지 못했습니다.")
 
+        # ✅ DB 저장
         db: Session = SessionLocal()
         record = LearningRecord(
             user_id=input_data.user_id,
             word=input_data.word,
             sentence=input_data.sentence.strip(),
-            score=None,
+            score=None,  # 점수는 제공하지 않음
             suggestion=suggestion
         )
         db.add(record)
@@ -107,6 +111,9 @@ def evaluate_sentence(input_data: FeedbackInput):
 
     except Exception as e:
         return {"error": str(e)}
+
+
+# ========================== Clova X - 1차 질문 API ==========================
 
 class ChatInput(BaseModel):
     category: str
@@ -165,16 +172,22 @@ def start_chat(input_data: ChatInput):
         for line in response.iter_lines():
             if line:
                 decoded_line = line.decode("utf-8").strip()
+                #print(f"🔵 받은 라인: {decoded_line}")
+
                 if decoded_line.startswith("event:"):
                     current_event = decoded_line[len("event:"):].strip()
+
                 elif decoded_line.startswith("data:"):
                     data_json = decoded_line[len("data:"):].strip()
                     try:
                         parsed = json.loads(data_json)
+
                         if current_event == "result":
                             if "message" in parsed and "content" in parsed["message"]:
                                 final_question = parsed["message"]["content"].strip()
+                                print(f"✅ 최종 질문 (stop 시점): {final_question}")
                                 break
+
                     except json.JSONDecodeError:
                         continue
 
@@ -186,11 +199,14 @@ def start_chat(input_data: ChatInput):
     except Exception as e:
         return {"error": str(e)}
 
+
+# ========================== Clova X - 꼬리 질문 API ==========================
+
 class FollowUpInput(BaseModel):
     answer: str
 
 @feedback_router.post("/followup_chat")
-def followup_chat(input_data: FollowUpInput, is_last: bool = Query(False)):
+def followup_chat(input_data: FollowUpInput):
     api_key = os.getenv("CLOVA_X_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="CLOVA_X_API_KEY가 설정되지 않았습니다.")
@@ -204,24 +220,41 @@ def followup_chat(input_data: FollowUpInput, is_last: bool = Query(False)):
         "Accept": "text/event-stream"
     }
 
-    followup_prompt = [
-        {
-            "role": "system",
-            "content": (
-                "너는 초등학생과 대화하는 친절한 AI야. "
-                "학생의 답변을 듣고 자연스럽게 이어지는 부드러운 다음 질문을 만들어줘. "
-                "문장은 한 문장으로 끝내고, 어렵지 않고 따뜻하게 해줘."
-            )
-        },
-        {
-            "role": "user",
-            "content": f"학생이 이렇게 대답했어: \"{input_data.answer}\"\n"
-                       "이 대답에 자연스럽게 이어질 수 있는 질문을 하나 만들어줘."
-        }
-    ]
+    # ✅ 4번째 답변 이후 종료 멘트
+    if input_data.round == 4:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "너는 초등학생과 대화하는 따뜻한 AI야. "
+                    "사전 테스트를 잘 끝낸 학생에게 부드럽고 다정하게 마무리 인사를 한 문장으로 해줘. "
+                    "예: '수고했어! 이제 학습하러 가볼까?'"
+                )
+            },
+            {
+                "role": "user",
+                "content": "사전 테스트를 마쳤어. 따뜻하게 마무리 멘트를 해줘."
+            }
+        ]
+    else:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "너는 초등학생과 대화하는 친절한 AI야. "
+                    "학생의 답변을 듣고 자연스럽게 이어지는 부드러운 다음 질문을 만들어줘. "
+                    "문장은 한 문장으로 끝내고, 어렵지 않고 따뜻하게 해줘."
+                )
+            },
+            {
+                "role": "user",
+                "content": f"학생이 이렇게 대답했어: \"{input_data.answer}\"\n이 대답에 자연스럽게 이어질 수 있는 질문을 하나 만들어줘."
+            }
+        ]
 
+    # 이하 동일
     request_data = {
-        "messages": followup_prompt,
+        "messages": messages,
         "topP": 0.8,
         "topK": 0,
         "maxTokens": 256,
@@ -236,7 +269,7 @@ def followup_chat(input_data: FollowUpInput, is_last: bool = Query(False)):
         response = requests.post(url, headers=headers, json=request_data, stream=True)
         response.raise_for_status()
 
-        followup_question = ""
+        result_text = ""
         current_event = ""
 
         for line in response.iter_lines():
@@ -250,62 +283,23 @@ def followup_chat(input_data: FollowUpInput, is_last: bool = Query(False)):
                         parsed = json.loads(data_json)
                         if current_event == "result":
                             if "message" in parsed and "content" in parsed["message"]:
-                                followup_question = parsed["message"]["content"].strip()
+                                result_text = parsed["message"]["content"].strip()
                                 break
                     except json.JSONDecodeError:
                         continue
 
-        if not followup_question:
-            raise HTTPException(status_code=500, detail="최종 꼬리질문을 가져오지 못했습니다.")
+        if not result_text:
+            raise HTTPException(status_code=500, detail="Clova로부터 결과를 받지 못했습니다.")
 
-        result = {"followup_question": followup_question}
-
-        if is_last:
-            ending_prompt = [
-                {
-                    "role": "system",
-                    "content": (
-                        "너는 초등학생과 대화하는 따뜻한 AI야. "
-                        "사전 테스트를 잘 끝낸 학생에게 부드럽고 다정하게 마무리 인사를 한 문장으로 해줘. "
-                        "예를 들어 '수고했어! 이제 학습하러 가볼까?' 같은 느낌으로 짧고 따뜻하게 말해줘."
-                    )
-                },
-                {
-                    "role": "user",
-                    "content": "사전 테스트를 마쳤어. 따뜻하게 마무리 멘트를 해줘."
-                }
-            ]
-
-            request_data["messages"] = ending_prompt
-
-            end_response = requests.post(url, headers=headers, json=request_data, stream=True)
-            end_response.raise_for_status()
-
-            final_ending = ""
-            current_event = ""
-
-            for line in end_response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8").strip()
-                    if decoded_line.startswith("event:"):
-                        current_event = decoded_line[len("event:"):].strip()
-                    elif decoded_line.startswith("data:"):
-                        data_json = decoded_line[len("data:"):].strip()
-                        try:
-                            parsed = json.loads(data_json)
-                            if current_event == "result":
-                                if "message" in parsed and "content" in parsed["message"]:
-                                    final_ending = parsed["message"]["content"].strip()
-                                    break
-                        except json.JSONDecodeError:
-                            continue
-
-            result.update({
-                "ending_message": final_ending,
+        if input_data.round == 4:
+            return {
+                "ending_message": result_text,
                 "next_action": "학습하기"
-            })
-
-        return result
+            }
+        else:
+            return {
+                "followup_question": result_text
+            }
 
     except Exception as e:
         return {"error": str(e)}
