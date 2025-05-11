@@ -2,7 +2,7 @@ import torch
 from transformers import BertTokenizer, AutoModelForSequenceClassification
 
 # ✅ 모델 저장 경로 (Render 또는 로컬 서버 내부 경로)
-MODEL_PATH = "./models/kobert/checkpoint"
+MODEL_PATH = "./saved_models/fine_tuned_kobert_book_all/checkpoint-3198"
 
 # ✅ 로컬에서 tokenizer 및 model 불러오기 (Hugging Face Hub 접근 X)
 tokenizer = BertTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
