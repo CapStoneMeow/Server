@@ -1,5 +1,6 @@
 import torch
-from transformers import BertTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import os
 
 # ✅ 모델 경로
 MODEL_PATH = "./model/kobert"
@@ -20,16 +21,22 @@ def load_model():
     if _tokenizer is None or _model is None:
         try:
             print("📦 KoBERT 모델 로드 중...")
-            _tokenizer = BertTokenizer.from_pretrained(
+
+            # 디버깅: 모델 경로 구조 출력
+            print("📂 MODEL_PATH 내용:", os.listdir(MODEL_PATH))
+
+            # 토크나이저 로드
+            _tokenizer = AutoTokenizer.from_pretrained(
                 MODEL_PATH,
-                local_files_only=True,
-                trust_remote_code=True
+                local_files_only=True
             )
+
+            # 모델 로드
             _model = AutoModelForSequenceClassification.from_pretrained(
                 MODEL_PATH,
-                local_files_only=True,
-                trust_remote_code=True
+                local_files_only=True
             )
+
             _model.eval()
             print("✅ 모델 로드 완료")
         except Exception as e:
