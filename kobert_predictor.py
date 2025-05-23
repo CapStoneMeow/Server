@@ -25,7 +25,7 @@ def load_model():
             _model = AutoModelForSequenceClassification.from_pretrained(
                 MODEL_DIR,
                 local_files_only=True,
-                trust_remote_code=True
+                trust_remote_code=False
             )
             _model.eval()
 
