@@ -24,7 +24,8 @@ def load_model():
             _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
             _model = AutoModelForSequenceClassification.from_pretrained(
                 MODEL_DIR,
-                local_files_only=True
+                local_files_only=True,
+                trust_remote_code=True
             )
             _model.eval()
 
