@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 import torch
 from transformers import BertTokenizer, BertForSequenceClassification
 import os
@@ -35,21 +37,26 @@ def load_model():
             raise RuntimeError("모델 또는 토크나이저를 불러오는 중 오류 발생")
 
 def predict_grade(text: str) -> dict:
-    load_model()
+    try:
+        load_model()
 
-    inputs = _tokenizer(
-        text,
-        return_tensors="pt",
-        truncation=True,
-        padding="max_length",
-        max_length=128
-    )
+        inputs = _tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            padding="max_length",
+            max_length=128
+        )
 
-    with torch.no_grad():
-        outputs = _model(**inputs)
-        pred = torch.argmax(outputs.logits, dim=1).item()
+        with torch.no_grad():
+            outputs = _model(**inputs)
+            pred = torch.argmax(outputs.logits, dim=1).item()
 
-    return {
-        "label_index": pred,
-        "label": label_map.get(pred, "Unknown")
-    }
+        return {
+            "label_index": pred,
+            "label": label_map.get(pred, "Unknown")
+        }
+
+    except Exception as e:
+        print("❌ 예측 실패:", e)
+        raise HTTPException(status_code=500, detail=f"예측 중 오류: {str(e)}")
