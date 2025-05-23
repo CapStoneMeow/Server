@@ -1,11 +1,9 @@
 from fastapi import HTTPException
-from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
-from safetensors.torch import load_file
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import os
 
-MODEL_DIR = "./model/kobert"  # 필요시 절대경로로 수정
-SAFETENSORS_PATH = os.path.join(MODEL_DIR, "model.safetensors")
+MODEL_DIR = "./model/kobert"
 
 label_map = {
     0: "초등_저학년",
@@ -22,14 +20,12 @@ def load_model():
             print("📦 KoBERT safetensors 모델 로드 중...")
             print("📂 MODEL_DIR 내용:", os.listdir(MODEL_DIR))
 
-            # ✅ config 및 tokenizer 로드
-            config = AutoConfig.from_pretrained(MODEL_DIR, local_files_only=True)
             _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
-
-            # ✅ 빈 모델 생성 후 safetensors 적용
-            _model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True)
-            state_dict = load_file(SAFETENSORS_PATH)
-            _model.load_state_dict(state_dict)
+            _model = AutoModelForSequenceClassification.from_pretrained(
+                MODEL_DIR,
+                local_files_only=True,
+                trust_remote_code=True
+            )
             _model.eval()
 
             print("✅ 모델 로드 완료")
