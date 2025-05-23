@@ -27,7 +27,7 @@ def load_model():
             _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
 
             # ✅ 빈 모델 생성 후 safetensors 적용
-            _model = AutoModelForSequenceClassification.from_config(config)
+            _model = AutoModelForSequenceClassification.from_config(config, trust_remote_code=True)
             state_dict = load_file(SAFETENSORS_PATH)
             _model.load_state_dict(state_dict)
             _model.eval()
