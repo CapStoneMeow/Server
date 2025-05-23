@@ -17,14 +17,14 @@ def load_model():
     global _tokenizer, _model
     if _tokenizer is None or _model is None:
         try:
-            print("📦 KoBERT safetensors 모델 로드 중...")
+            print("📦 KoBERT .bin 모델 로드 중...")
             print("📂 MODEL_DIR 내용:", os.listdir(MODEL_DIR))
 
+            # ✅ .bin 파일이 포함된 경로에서 로드
             _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
             _model = AutoModelForSequenceClassification.from_pretrained(
                 MODEL_DIR,
-                local_files_only=True,
-                trust_remote_code=True
+                local_files_only=True
             )
             _model.eval()
 
