@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 #from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from transformers import BertTokenizer, BertForSequenceClassification, AutoTokenizer
+from transformers import BertTokenizer, BertForSequenceClassification, AutoTokenizer, AutoModelForSequenceClassification
 import torch
 import os
 
@@ -23,8 +23,9 @@ def load_model():
 
             # ✅ .bin 파일이 포함된 경로에서 로드
 
-            _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
-            _model = BertForSequenceClassification.from_pretrained(MODEL_DIR, local_files_only=True)
+            _tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True, trust_remote_code=True)
+            _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR, local_files_only=True,
+                                                                        trust_remote_code=True)
             _model.eval()
 
             print("✅ 모델 로드 완료")
