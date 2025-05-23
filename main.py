@@ -24,7 +24,7 @@ def download_model():
 
     try:
         print("🔽 KoBERT 모델 다운로드 시작...")
-        gdown.download(id="1S7i2VFQngrUO8zTZuuIj3l4FawaYAQO4", output="kobert_model.zip", quiet=False)
+        gdown.download(id="1b2F-xk3gw9nVM8-XED35r1gPu9oN1Etl", output="kobert_model.zip", quiet=False)
         with zipfile.ZipFile("kobert_model.zip", "r") as zip_ref:
             zip_ref.extractall("./model/")
         os.remove("kobert_model.zip")
