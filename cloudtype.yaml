@@ -1,0 +1,10 @@
+name: fastapi-app
+app: python
+options:
+  envs:
+    - name: SQLALCHEMY_DATABASE_URL
+      value: postgresql://database_f03t_user:bXD9RwWgRTyBb9DWs9iH4OpaTr9r1lrK@dpg-d0b2ljadbo4c73cc14pg-a/database_f03t
+  build:
+    commands:
+      - pip install -r requirements.txt
+  start: uvicorn main:app --host 0.0.0.0 --port $PORT
