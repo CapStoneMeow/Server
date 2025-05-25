@@ -1,8 +1,8 @@
 from fastapi import HTTPException
-#from transformers import AutoTokenizer, AutoModelForSequenceClassification
-from transformers import BertTokenizer, BertForSequenceClassification, AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification
 import torch
 import os
+from tokenization_kobert import KoBertTokenizer
 
 MODEL_DIR = "./model/kobert"
 
@@ -21,9 +21,13 @@ def load_model():
             print("📦 KoBERT .bin 모델 로드 중...")
             print("📂 MODEL_DIR 내용:", os.listdir(MODEL_DIR))
 
-            # ✅ .bin 파일이 포함된 경로에서 로드
-            tokenizer = AutoTokenizer.from_pretrained("./model/kobert", local_files_only=True, trust_remote_code=True)
-            model = AutoModelForSequenceClassification.from_pretrained("./model/kobert", local_files_only=True)
+            # ✅ KoBertTokenizer는 custom 초기화 (from_pretrained X)
+            vocab_file = os.path.join(MODEL_DIR, "tokenizer_78b3253a26.model")
+            vocab_txt = os.path.join(MODEL_DIR, "vocab.txt")
+            _tokenizer = KoBertTokenizer(vocab_file=vocab_file, vocab_txt=vocab_txt)
+
+            # ✅ 모델 로드
+            _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR, local_files_only=True)
             _model.eval()
 
             print("✅ 모델 로드 완료")
