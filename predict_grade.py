@@ -15,7 +15,7 @@ def predict_grade_bulk(input_data: BulkAnswerInput):
 
     preds = [predict_grade(a)["label_index"] for a in input_data.answers]
     final = round(sum(preds) / 4)
-    label_map = {0: "초등_저학년", 1: "초등_고학년"}
+    label_map = {0: "초등_저학년", 1: "초등_고학년", 2: "초등_중학년"}
 
     return {
         "predicted_grade": label_map[final],

@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from transformers import AutoModelForSequenceClassification
+from transformers import AutoModelForSequenceClassification, AutoConfig
 import torch
 import os
 from tokenization_kobert import KoBertTokenizer
@@ -8,7 +8,8 @@ MODEL_DIR = "./model/kobert"
 
 label_map = {
     0: "초등_저학년",
-    1: "초등_고학년"
+    1: "초등_고학년",
+    2: "초등_중학년"
 }
 
 _tokenizer = None
@@ -26,8 +27,12 @@ def load_model():
             vocab_txt = os.path.join(MODEL_DIR, "vocab.txt")
             _tokenizer = KoBertTokenizer(vocab_file=vocab_file, vocab_txt=vocab_txt)
 
+            # ✅ config 강제 세팅 (num_labels=3)
+            config = AutoConfig.from_pretrained(MODEL_DIR)
+            config.num_labels = 3
+
             # ✅ 모델 로드
-            _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR, local_files_only=True)
+            _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR, config=config, local_files_only=True)
             _model.eval()
 
             print("✅ 모델 로드 완료")
