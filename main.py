@@ -60,6 +60,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:5174",
+        "https://ddok-to.vercel.app"
         # 배포 주소도 추가 가능
     ],
     allow_credentials=True,
